@@ -24,7 +24,7 @@ Yes, you can use it to replace you're WordPress installation, but I wouldn't rec
 
 - [ ] Comments
 - [ ] Post Filtering
-- [ ] Improve the widgets? Maybe?
+
 
 
 
