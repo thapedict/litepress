@@ -36,8 +36,19 @@ function body_class() {
 	if( is_archive() )
 		$classes[] = 'archive';
 	
-	if( get_url() != 'home' )
-		$classes[] = get_url();
+	if( is_search() )
+		$classes[] = 'search';
+	
+	if( is_404() )
+		$classes[] = 'error404';
+	
+	if( is_page() )
+		$classes[] = 'page';
+	
+	if( is_single() )
+		$classes[] = 'single single-post';
+	
+	$classes = apply_filters( 'body_class', (array) $classes );
 	
 	$classes = implode( ' ', $classes );
 	
@@ -89,24 +100,27 @@ function get_query_template() {
 	return apply_filters( 'template_include', $template );
 }
 
-function wp_title( $sep = '', $print = true ) {
+function wp_title( $sep = '&raquo;', $print = true, $side = 'left' ) {
 	$title = '';
 	
 	if( is_404() ):
 		$title = '404 Page Not Found';
-	elseif( is_home() ):
-		$title = 'Home - ' . get_bloginfo( 'name' );
 	elseif( is_page() ):
 		$page = get_page();
 		$title = $page->title;
-	elseif( is_archive() ):
-		$title = ucwords( preg_replace( '/[\W]/', ' ', get_url() ) ); // aggg
 	elseif( is_single() ):
-		$page = get_post();
-		$title = $page->title;
+		$post = get_post();
+		$title = $post->title;
 	endif;
 	
-	$title = apply_filters( 'wp_title', $title );
+	if( $title ) {
+		if( $side == 'left' )
+			$title = "$sep $title";
+		else
+			$title .= " $sep ";		
+	}
+	
+	$title = apply_filters( 'wp_title', $title, $sep, $side );
 	
 	if( $print )
 		print $title;
@@ -117,54 +131,64 @@ function wp_title( $sep = '', $print = true ) {
 function wp_head() {
 	// to-do
 	do_action( 'wp_head' );
-	do_action( 'wp_enqueue_scripts' );
-	do_action( 'wp_enqueued_scripts' ); // I think
 }
 
 function wp_footer() {
 	// to-do
 	do_action( 'wp_footer' );
-	do_action( 'wp_enqueue_scripts' );
-	do_action( 'wp_enqueued_scripts' );
 }
 
-function get_template_part( $main, $part = '' ) {
-	if( $part == '' )
-		$part = 'none';
+function get_template_part( $template, $part = '' ) {
+	if( ! empty( $part ) ) {
+		$template .= '-' . $part;
+	}
 	
-	$template = $main . '-' . $part . '.php';
+	$template .= '.php';
 	
 	load_template( $template );
 }
 
 function load_template( $template ) {
-	extract( $GLOBALS );
+	global $post, $posts, $paged;
 	
 	require HOME_DIR . '/' . $template;	
 }
 
-function get_header() {
-	load_template( 'header.php' );
-}
-
-function get_footer() {
-	load_template( 'footer.php' );
-}
-
-function get_sidebar() {
-	do_action( 'widgets_init' );
+function get_header( $name = '' ) {
+	$template = 'header';
 	
-	load_template( 'sidebar.php' );
+	if( $name )
+		$template .= '-' . $name;
+	
+	load_template( $template . '.php' );
+}
+
+function get_footer( $name = '' ) {
+	$template = 'footer';
+	
+	if( $name )
+		$template .= '-' . $name;
+	
+	load_template( $template . '.php' );
+}
+
+function get_sidebar( $name = '' ) {	
+	$template = 'sidebar';
+	
+	if( $name )
+		$template .= '-' . $name;
+	
+	load_template( $template . '.php' );
 }
 
 function get_header_image() {
 	// to-do
-	if( is_readable( HOME_DIR . 'img/site-logo.jpg' ) )
-		return HOME_URL . 'img/site-logo.jpg';
-	elseif( is_readable( HOME_DIR . 'img/site-logo.png' )  )
-		return HOME_URL . 'img/site-logo.png';		
+	if( is_readable( WP_INC . 'img/header.jpg' ) )
+		return WP_IMG . 'header.jpg';
+	elseif( is_readable( WP_INC . 'img/header.png' )  )
+		return WP_IMG . 'header.png';		
 	else
-		return;
+		return false;
 }
 
 function header_image() {
@@ -203,12 +227,32 @@ function the_menu_class( $menu_item ) {
 		print 'current_page_item current-menu-item';
 }
 
-function esc_url( $url ) {
-	return urlencode( $url ); // i think
+function add_theme_support( $feature, $args = array() ) {
+	global $current_theme_supports;
+	
+	$current_theme_supports[ $feature ] = $args;
 }
 
-function esc_attr( $attr ) {
-	return htmlentities( $attr ); // i think
+function current_theme_supports( $feature ) {
+	global $current_theme_supports;
+	
+	return isset( $current_theme_supports[ $feature ] );
+}
+
+function set_post_thumbnail_size() {
+	// to-do
+}
+
+function add_image_size() {
+	// to-do
+}
+
+function add_editor_style() {
+	// to-do
+}
+
+function register_nav_menu() {
+	// to-do
 }
 
 

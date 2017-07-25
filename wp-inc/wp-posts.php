@@ -3,12 +3,20 @@
 // wp-post
 
 
-function post_class() {
+function post_class( $append = '' ) {
 	// to-do
-	// yeah i know
-	$post_class = 'type-post status-publish format-standard category-uncategorized';
+	$classes = array( 'type-post', 'status-publish', 'format-standard', 'category-uncategorized' );
 	
-	print apply_filters( 'post_class', $post_class );
+	$classes =  (array) apply_filters( 'post_class', $classes );
+	
+	$classes = implode( ' ', $classes );
+	
+	if( is_array( $append ) )
+		$append = implode( ' ', $append );
+	
+	$post_class = $classes . ' ' . $append;
+	
+	printf( 'class="%s"', esc_attr( $post_class ) );
 }
 
 function get_post_format() {
@@ -16,35 +24,13 @@ function get_post_format() {
 	return null;
 }
 
-function get_post_type( $id = null ) {
-	// to-do
-	if( is_null( $id ) )
-		$id = get_url();
+function get_the_ID() {
+	global $post;
 	
-	if( is_single( $id ) )
-		return 'post';
-	elseif( is_page( $id ) )
-		return 'page';
-	else
-		return '';
-}
-
-function have_posts() {
-	if ( empty( $GLOBALS[ 'POSTS' ] ) )
-		return false;
+	if( empty( $post ) )
+		return;
 	
-	return ( current( $GLOBALS[ 'POSTS' ] ) !== false );
-}
-
-function the_post() {
-	if( ! empty( $GLOBALS[ 'POSTS' ] ) ) {
-		$GLOBALS[ 'post' ] = current( $GLOBALS[ 'POSTS' ] );
-		next( $GLOBALS[ 'POSTS' ] );
-	}
-}
-
-function get_the_id() {
-	return isset( $GLOBALS[ 'post' ]->id ) ? $GLOBALS[ 'post' ]->id: null;
+	return $post->id;
 }
 
 function the_id() {
@@ -52,10 +38,12 @@ function the_id() {
 }
 
 function  get_the_title() {
-	if( is_single() || is_page() )
-		return $GLOBALS[ 'POSTS' ][0]->title;
+	global $post;
 	
-	return isset( $GLOBALS[ 'post' ]->title ) ? $GLOBALS[ 'post' ]->title: null;
+	if( empty( $post ) )
+		return;
+	
+	return apply_filters( 'the_title', $post->title );
 }
 
 function the_title() {
@@ -63,7 +51,14 @@ function the_title() {
 }
 
 function get_the_date( $format = 'j F Y' ) {
-	return isset( $GLOBALS[ 'post' ]->date) ? date( $format, strtotime ( $GLOBALS[ 'post' ]->date ) ): date( $format );
+	global $post;
+	
+	if( empty( $post ) )
+		return;
+	
+	$date = isset( $post->date ) ? date( $format, strtotime( $post->date ) ): date( $format );
+	
+	return apply_filters( 'get_the_date', $date, $format );
 }
 
 function the_date( $format = 'j F Y' ) {
@@ -94,11 +89,13 @@ function get_all_categories() {
 	return $GLOBALS[ 'CATEGORIES' ];
 }
 
-function get_the_category() {
-	if( ! isset( $GLOBALS[ 'post' ]->category ) )
+function get_the_category() {	
+	global $post;
+	
+	if( ! isset( $post->category ) )
 		return '';
 	
-	$p_cats = $GLOBALS[ 'post' ]->category;
+	$p_cats = $post->category;
 	
 	$categories = get_all_categories();
 	
@@ -131,16 +128,47 @@ function get_category_link( $term_id ) {
 	return home_url() . '/category/' . $category[0]->slug . '/'; // I think this is what happens???hmmm
 }
 
-function get_the_content() {
-	$content = '';
+function get_the_category_list( $sep = '', $parents = '', $postid = null ) {
+	$categories = get_the_category( $postid );
 	
-	if( isset( $GLOBALS[ 'post' ]->content ) ) {
-		$content = $GLOBALS[ 'post' ]->content;
+	if( empty( $categories ) )
+		return '';
+	else
+		$cat_links = array();
+	
+	foreach( $categories as $c ) {
+		$cat_links[] = sprintf( '<a href="%s" rel="category tag">%s</a>', get_category_link( $c->term_id ), $c->name );
 	}
 	
-	$content = apply_filters( 'the_content', $content );
+	return implode( $sep, $cat_links );
+}
+
+function get_the_tags( $post_id = null ) {
+	// to-do
+	return array();
+}
+
+function the_tags( $before = '', $between = '', $after = '' ) {
+	// to-do
+	return '';
+}
+
+function get_the_tag_list() {
+	// to-do
+	return '';
+}
+
+function get_the_content() {
+	global $post;
 	
-	return $content;
+	if( empty( $post ) )
+		return;
+	
+	return $post->content;
+}
+
+function the_content() {
+	print apply_filters( 'the_content', get_the_content() );	
 }
 
 function get_the_excerpt() {
@@ -148,7 +176,7 @@ function get_the_excerpt() {
 	$content = strip_tags( $content );
 	$content = explode( ' ', $content );
 	
-	$read_more = apply_filters( 'excerpt_more', '...' );
+	$read_more = apply_filters( 'excerpt_more', '[...]' );
 	
 	$excerpt_length = apply_filters( 'excerpt_length', 100 );
 	
@@ -161,19 +189,22 @@ function get_the_excerpt() {
 	
 	$excerpt = '<p>' . $excerpt . $read_more . '</p>';
 	
-	return apply_filters( 'the_excerpt', $excerpt );
+	return apply_filters( 'get_the_excerpt', $excerpt );
 }
 
 function the_excerpt() {
 	print get_the_excerpt();
 }
 
-function the_content() {
-	print get_the_content();	
-}
-
 function get_permalink() {
-	return isset( $GLOBALS[ 'post' ]->name ) ? HOME_URL . $GLOBALS[ 'post' ]->name . '/': null;
+	global $post;
+	
+	if( empty( $post ) )
+		return;
+	
+	$link = home_url( '/' ) . $post->name . '/';
+	
+	return apply_filters( 'the_permalink', $link );
 }
 
 function the_permalink() {
@@ -188,12 +219,37 @@ function the_author() {
 	print get_the_author();
 }
 
+function get_the_author_meta( $field ) {
+	switch( $field ) {
+		case 'description':
+			return '';
+	}
+	return '';
+}
+
+function the_author_meta( $field ) {
+	print get_the_author_meta( $field );
+}
+
+function get_author_posts_url() {
+	return home_url( '/author/thapelo-moeti' );
+}
+
+function the_author_posts_url() {
+	print get_author_posts_url();
+}
+
 function has_post_thumbnail() {
+	// to-do
 	return false;
 }
 
 function get_post_thumbnail_id() {
 	return false;
+}
+
+function the_post_thumbnail() {
+	// to-do
 }
 
 function wp_get_attachment_image_src() {
@@ -202,22 +258,51 @@ function wp_get_attachment_image_src() {
 
 function posts_nav_link( $glue = '', $prev_label = '', $next_label = '' ) {
 	// to-do
-	print previous_posts_link( $prev_label ) . $glue . next_posts_link( $next_label );
+	previous_posts_link( $prev_label );
+	print  $glue;
+	next_posts_link( $next_label );
 }
 
 function previous_posts_link() {
 	// to-do
-	return '';
+	$html = apply_filters( 'previous_posts_link', '<a href="javascript:void(0);">&laquo; Previous Page</a>' );
+	
+	print $html;
 }
 
 function next_posts_link() {
 	// to-do
-	return '';
+	$html = apply_filters( 'next_posts_link', '<a href="javascript:void(0);">Next Page &raquo;</a>' );
+	
+	print $html;
+}
+
+function previous_post_link() {
+	// to-do
+	$html = apply_filters( 'previous_post_link', '<a href="javascript:void(0);">&laquo; Previous Post</a>' );
+	
+	print $html;
+}
+
+function next_post_link() {
+	// to-do
+	$html = apply_filters( 'next_post_link', '<a href="javascript:void(0);">Next Post &raquo;</a>' );
+	
+	print $html;
 }
 
 function edit_post_link( $label = 'Edit', $before = '', $after = '' ) {
 	// to-do
-	// echo $before, '<a href="javascript:void(0)">', $label, '</a>', $after;
+	$html = apply_filters( 'edit_post_link', '' );
+	
+	print $html;
+}
+
+function wp_link_pages() {
+	// to-do
+	$html = apply_filters( 'wp_link_pages', '' );
+	
+	print $html;
 }
 
 function the_posts_pagination() {
@@ -256,6 +341,7 @@ function single_cat_title( $prefix = '', $print = true ) {
 
 function single_tag_title( $prefix = '', $print = true ) {
 	// to-do
+	// should run the same as single_cat_title
 }
 
 

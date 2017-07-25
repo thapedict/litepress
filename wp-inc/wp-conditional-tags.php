@@ -1,27 +1,21 @@
 <?php
+/*
+ *	WP equivalent conditional tags
+ *	SN: should we also run them through filter before returning a result?
+ */
 
 function is_page( $url = null ) {
 	if( is_null( $url ) )
 		$url = get_url();
 	
-	$pages = get_pages();
-	
-	$is_page = false;
-	
-	$is_page = tdt_array_where( $pages, array( 'name' => $url ) ) ? true: false;
-	
-	return $is_page;
+	return !! get_page( $url );
 }
 
 function is_single( $url = null ) {
 	if( is_null( $url ) )
 		$url = get_url();
 	
-	$posts = get_posts();
-	
-	$is_post = tdt_array_where( $posts, array( 'name' => $url ) );
-	
-	return ! empty( $is_post );
+	return !! get_post( $url );
 }
 
 function is_singular( $url = null ) {
@@ -36,8 +30,6 @@ function is_archive( $url = null ) {
 	// to-do
 	if( is_null( $url ) )
 		$url = get_url();
-	
-	// $archives = array( 'archive', 'blog' ); // page for posts
 	
 	if( is_date( $url ) || is_category( $url ) )
 		return true;
@@ -151,6 +143,29 @@ function is_search() {
 		return true;
 	else
 		return false;
+}
+
+function is_attachment( $attachment = null ) {
+	// to-do
+	return false;
+}
+
+function is_ssl() {
+	// to-do
+	if( isset( $SERVER[ 'HTTPS' ] ) )
+		return true;
+	else
+		return false;
+}
+
+function wp_style_is() {
+	// to-do
+	return false;
+}
+
+function is_multi_author() {
+	// to-do
+	return false;
 }
 
 

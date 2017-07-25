@@ -21,7 +21,12 @@ class tdt_debug {
 		if( empty( $GLOBALS[ 'tdt_debug_footer' ] ) )
 			return;
 		
-		var_dump( $GLOBALS[ 'tdt_debug_footer' ] );
+		foreach( $GLOBALS[ 'tdt_debug_footer' ] as $v ) {
+			var_dump( $v );
+			echo "*********---------*********---------**********<br/>\n";
+		}
+		
+		$GLOBALS[ 'tdt_debug_footer' ] = array();
 	}
 	
 	function add( $var ) {
@@ -58,12 +63,21 @@ class tdt_debug {
 	
 }
 
-function tdt_debug() {
+function tdt_debug( $var = '--null--' ) {
 	if( ! isset( $GLOBALS[ 'tdt_debug' ] ) )
 		$GLOBALS[ 'tdt_debug' ] = new tdt_debug();
+	
+	if( $var !== '--null--' )
+		$GLOBALS[ 'tdt_debug' ]->add( $var );
 		
 	return $GLOBALS[ 'tdt_debug' ];
 }
+
+if( ! function_exists( 'bool2str' ) ):
+	function bool2str( $bool ) {
+		return $bool ? 'true': 'false';
+	}
+endif;
 
 
 
