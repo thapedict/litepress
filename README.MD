@@ -15,10 +15,6 @@ Yes, you can use it to replace you're WordPress installation, but I wouldn't rec
 
 # This Project Is Still Under Development
 
-### To-do
-
-- [ ] Comments
-- [ ] Post Filtering
 
 
 
